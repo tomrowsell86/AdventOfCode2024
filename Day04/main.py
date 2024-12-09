@@ -22,8 +22,9 @@ def lineacc(
             if isDirectionFromPreviousLine(pos, 1, prevLineCandidates):
                 lineCandidates.append((pos, 1))
 
-            if isDirectionFromPreviousLine(pos, 0, prevLineCandidates):
+            if not partB and isDirectionFromPreviousLine(pos, 0, prevLineCandidates):
                 lineCandidates.append((pos, 0))
+
         else:
             lineCandidates.append((pos, None))
     return (False, lineCandidates)
@@ -52,13 +53,6 @@ def isDirectionFromPreviousLine(
 with open("input.txt", "r") as file:
     count = 0
     query, rquery = (list("XMAS"), list("SAMX"))
-    #   for line in map(lambda _: file.readline().removesuffix("\n"), range(0, 4)):
-    #       cache.append(list(line))
-    #       count += len(re.findall("(XMAS)", line))
-    #       count += len(re.findall("(SAMX)", line))
-    #
-    #   count += findWordsAcrossMultipleRows(cache, query)
-    #   count += findWordsAcrossMultipleRows(cache, rquery)
     buffer = []
     while line := file.readline().removesuffix("\n"):
         if len(buffer) < 3:
