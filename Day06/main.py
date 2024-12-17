@@ -1,5 +1,4 @@
 from typing import Tuple
-from itertools import accumulate
 
 directionSet = set(["<", ">", "^", "v"])
 
@@ -32,26 +31,43 @@ def moveGuard(
     obstacles: list[Tuple[int, int]],
     visited: set[Tuple[int, int]],
 ):
+    print(guardPosition)
     match guardPosition:
         case (x, y, "^"):
-            nextYObstacle = max([oy for ox, oy in obstacles if ox == x and oy < y])
-            visited.union(map(lambda yb: (x, yb), range(y, nextYObstacle + 1)))
+            ys = [oy for (ox, oy) in obstacles if ox == x and oy < y]
+            if not len(ys):
+                return visited
+            nextYObstacle = max(ys)
+            visited = visited.union(
+                map(lambda yb: (x, yb), range(y, nextYObstacle, -1))
+            )
             guardPosition = (x, nextYObstacle + 1, ">")
             return moveGuard(guardPosition, obstacles, visited)
         case (x, y, ">"):
-            nextXObstacle = min([ox for ox, oy in obstacles if oy == y and ox > x])
-            visited.union(map(lambda xb: (xb, y), range(x, nextXObstacle - 1)))
+            ys = [ox for ox, oy in obstacles if oy == y and ox > x]
+            if not any(ys):
+                return visited
+            nextXObstacle = min(ys)
+            visited = visited.union(map(lambda xb: (xb, y), range(x, nextXObstacle)))
             guardPosition = (nextXObstacle - 1, y, "v")
             return moveGuard(guardPosition, obstacles, visited)
 
         case (x, y, "v"):
-            nextYObstacle = min([oy for ox, oy in obstacles if ox == x and oy > y])
-            visited.union(map(lambda yb: (x, yb), range(y, nextYObstacle - 1)))
+            ys = [oy for ox, oy in obstacles if ox == x and oy > y]
+            if not any(ys):
+                return visited
+            nextYObstacle = min(ys)
+            visited = visited.union(map(lambda yb: (x, yb), range(y, nextYObstacle)))
             guardPosition = (x, nextYObstacle - 1, "<")
             return moveGuard(guardPosition, obstacles, visited)
         case (x, y, "<"):
-            nextXObstacle = max([ox for ox, oy in obstacles if oy == y and ox < x])
-            visited.union(map(lambda xb: (xb, y), range(x, nextXObstacle + 1)))
+            ys = [ox for ox, oy in obstacles if oy == y and ox < x]
+            if not any(ys):
+                return visited
+            nextXObstacle = max(ys)
+            visited = visited.union(
+                map(lambda xb: (xb, y), range(x, nextXObstacle, -1))
+            )
             guardPosition = (nextXObstacle + 1, y, "^")
             return moveGuard(guardPosition, obstacles, visited)
 
@@ -68,6 +84,8 @@ with open("input.txt") as file:
 
 if startPoint is None:
     raise Exception("no start point found")
-moveGuard(startPoint, gMap, set([]))
-print(startPoint)
-print(gMap)
+
+sx, sy, _ = startPoint
+results = moveGuard(
+    startPoint, [(x, y) for x, y, v in gMap if v not in directionSet], set([(sx, sy)])
+)
