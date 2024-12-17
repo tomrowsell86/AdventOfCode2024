@@ -5,49 +5,51 @@ def scanUpdates(hd, tl, orderDict):
     if not any(tl):
         return True
     else:
-        if str(hd) in orderDict and any(
-            [t for t in tl if any([d for d in orderDict[str(hd)] if d == str(t)])]
+        if hd in orderDict and any(
+            [t for t in tl if any([d for d in orderDict[hd] if d == t])]
         ):
             return False
         else:
             return scanUpdates(tl[0], tl[1:], orderDict)
 
 
-def sortedUpdates(updates: list[int], orderLookup: dict[str, set[str]]):
+def sortedUpdates(updates: list[int], orderLookup: dict[int, set[int]]):
     if len(updates) == 1:
         return updates
     hd = updates[0]
     newUpdates = sortedUpdates(updates[1:], orderLookup)
-    hdPos = 0
-    for i, u in enumerate(newUpdates):
-        if hd not in orderLookup or u in orderLookup[str(hd)]:
+    hdPos = -1
+    fstItem = hd
+    for i, update in enumerate(newUpdates):
+        if hd in orderLookup and update in orderLookup[hd]:
+            if hdPos == -1:
+                fstItem = update
+            else:
+                newUpdates[hdPos] = update
             newUpdates[i] = hd
-            newUpdates[hdPos] = u
             hdPos = i
-
+    newUpdates.insert(0, fstItem)
     return newUpdates
 
 
 with open("input.txt", "r") as file:
-    updateFollow: dict[str, set[str]] = {}
+    updatePrecededByLookup: dict[int, set[int]] = {}
     while line := file.readline().removesuffix("\n"):
-        [v, k] = line.split("|")
-        if k not in updateFollow:
-            updateFollow[k] = set([])
-        updateFollow[k].add(v)
+        precededBy, update = map(int, line.split("|"))
+        if update not in updatePrecededByLookup:
+            updatePrecededByLookup[update] = set([])
+        updatePrecededByLookup[update].add(precededBy)
 
-    partB = 0
-    partA = 0
+    partB, partA = (0, 0)
     while line := file.readline().removesuffix("\n"):
         updates: list[int] = list(map(int, line.split(",")))
         head = updates[0]
         tail = updates[1:]
-        isCorrect = scanUpdates(head, tail, updateFollow)
+        isCorrect = scanUpdates(head, tail, updatePrecededByLookup)
         if isCorrect:
             partA += updates[floor(len(updates) / 2)]
         else:
-            sUpdates = sortedUpdates(updates, updateFollow)
-            print(sUpdates)
+            sUpdates = sortedUpdates(updates, updatePrecededByLookup)
             partB += sUpdates[floor(len(sUpdates) / 2)]
 
     print(partA)
