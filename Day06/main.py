@@ -29,8 +29,12 @@ def moveGuard(
     dimensions: Tuple[int, int],
     lastEightVertices: deque[Tuple[int, int]] = deque(maxlen=8),
 ):
+    # abandon the hash method as cycles could be any multiple of 4
+    # instead record a list of guard positions instead and for every move check against the start of the record list and tick off each consecutive vertex
+    #
+    print(lastEightVertices)
     primeFactors = [13, 5, 7, 11]
-    if len(lastEightVertices) >= 8:
+    if len(lastEightVertices) == 8:
         hashValFirstFour = sum(
             [p * x * y for p, (x, y) in zip(primeFactors, lastEightVertices)]
         )
@@ -38,7 +42,6 @@ def moveGuard(
             [p * x * y for p, (x, y) in zip(primeFactors, list(lastEightVertices)[-4:])]
         )
         print("hash of first four: %s %s" % (hashValFirstFour, hashValLastFour))
-        print(lastEightVertices)
         if hashValFirstFour == hashValLastFour:
             print("matched!!!!!!!!!!!!!!")
             return visited, True
@@ -83,24 +86,29 @@ def moveGuard(
             )
             guardPosition = (nextXObstacle + 1, y, "^")
     lastEightVertices.append((guardPosition[0], guardPosition[1]))
-    return moveGuard(guardPosition, obstacles, visited, dimensions)
+    return moveGuard(
+        guardPosition,
+        obstacles,
+        visited,
+        dimensions,
+        lastEightVertices=lastEightVertices,
+    )
 
 
 def partB(visited, obstacles, guardPosition, dimensions):
     loopCounter = 0
+    dq = deque(maxlen=8)
     for vx, vy in visited:
         print("%s %s" % (vx, vy))
         newObstacles = []
         newObstacles.extend(obstacles)
         newObstacles.append((vx, vy))
-        dq = deque(maxlen=8)
-        _, isLoop = moveGuard(
+        (_, isLoop) = moveGuard(
             guardPosition, newObstacles, set(), dimensions, lastEightVertices=dq
         )
         if isLoop:
-            loopCounter += 1
+            loopCounter = loopCounter + 1
         dq.clear()
-
     return loopCounter
 
 
