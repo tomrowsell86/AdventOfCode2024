@@ -1,6 +1,5 @@
 from functools import reduce
 from itertools import dropwhile, repeat, takewhile
-
 from typing import NamedTuple, Tuple
 
 Block = NamedTuple("Block", [("id", "int"), ("size", "int"), ("start_position", "int")])
@@ -33,8 +32,6 @@ def parse_and_write_out_disk_layout(input):
 
 def checksum_reducer(state: int, item: Tuple[int, str]):
     position, id = item
-    if id != ".":
-        print(f"reducer id {id}")
     val = 0 if id == "." else int(id)
     state += position * val
     return state
