@@ -21,7 +21,11 @@ def traverse_graph(location: Point, graph: list[Point]) -> list[Point]:
         and (ld == (1, 0) or ld == (0, 1))
     ]
 
-    return [b for c in (traverse_graph(p, graph) for p in adj_points) for b in c]
+    return [
+        completed_point
+        for completed_points in (traverse_graph(p, graph) for p in adj_points)
+        for completed_point in completed_points
+    ]
 
 
 def reduce_trailhead_scores(
