@@ -52,6 +52,10 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
                 region.perimeter += 1
                 region.area += 1
             else:
+                if last_char:
+                    region = state.region_buffer[last_char[0]]
+                    region.perimeter += 1
+
                 state.region_buffer[region_key] = RegionSummary(c, 1, 2)
         elif state.previous_line[x][1] != c and (
             (last_char and last_char[1] != c) or not last_char
@@ -75,15 +79,15 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
                     and last_char[1] == c
                     and last_char[0] != state.previous_line[x][0]
                 ):
-                    print("merge")
-                    print(state.region_buffer)
-                    print(last_char[0])
-                    print(state.previous_line[x][0])
-                    region_key = last_char[0]
-                    merge_target = state.region_buffer[region_key]
-                    merge_target.perimeter += rs.perimeter
-                    merge_target.area += rs.area
-                    state.region_buffer.pop(state.previous_line[x][0])
+                    merge_source = state.region_buffer[last_char[0]]
+                    for i in [
+                        i for i, (key, _) in enumerate(prev_line) if key == last_char[0]
+                    ]:
+                        prev_line[i] = (region_key, c)
+
+                    rs.perimeter += merge_source.perimeter
+                    rs.area += merge_source.area
+                    state.region_buffer.pop(last_char[0])
             else:
                 prev_line_region = state.region_buffer[state.previous_line[x][0]]
                 prev_line_region.perimeter += 1
@@ -110,5 +114,6 @@ with open("input.txt") as file:
     ]
     for region in last_line_regions:
         region.perimeter += 1
+    print(reduced_state)
     result = sum([a.perimeter * a.area for a in reduced_state.region_buffer.values()])
     print(result)
