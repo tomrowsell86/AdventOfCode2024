@@ -1,6 +1,7 @@
 from collections.abc import Iterable
-from typing import Tuple, NamedTuple
+from typing import NamedTuple
 from functools import reduce
+from itertools import pairwise
 
 Point = NamedTuple("Point", [("x", int), ("y", int)])
 RegionPair = NamedTuple("RegionPair", [("region_key", Point), ("plot", str)])
@@ -42,7 +43,6 @@ def line_gen(file):
 def line_reducer(state: RegionScanState, line: Iterable[str]):
     last_char = None
     prev_line = []
-    regions_to_seal = []
     for x, plot in enumerate(line):
         region_key = Point(x, state.y)
         if state.y == 0:
@@ -66,10 +66,17 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
             if last_char:
                 l_region = state.region_buffer[last_char.region_key]
                 l_region.perimeter += 1
-                l_region.sides += 1
+                if (
+                    state.previous_line[x].region_key
+                    == state.previous_line[x - 1].region_key
+                    or state.previous_line[x - 1].region_key != last_char.region_key
+                ):
+                    l_region.sides += 1
+
                 if (
                     state.previous_line[x - 1].region_key
                     != state.previous_line[x].region_key
+                    or state.previous_line[x].region_key == last_char.region_key
                 ):
                     r.sides += 1
             else:
@@ -89,6 +96,9 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
                             != last_char.region_key
                         ):
                             last_r.sides += 1
+                            if state.previous_line[x - 1].region_key == region_key:
+                                rs.sides += 1
+
                     rs.perimeter += 1
                 elif (
                     last_char
@@ -103,21 +113,23 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
                     ]:
                         prev_line[i] = RegionPair(region_key, plot)
 
+                    rs.sides += merge_source.sides
                     rs.perimeter += merge_source.perimeter
                     rs.area += merge_source.area
-                    rs.sides += 2
                     state.region_buffer.pop(last_char.region_key)
-            else:
+            elif last_char:
                 prev_line_region = state.region_buffer[
                     state.previous_line[x].region_key
                 ]
                 prev_line_region.perimeter += 1
+                rs = state.region_buffer[last_char.region_key]
                 if (
                     state.previous_line[x - 1].region_key
                     != state.previous_line[x].region_key
                 ):
                     prev_line_region.sides += 1
-                rs = state.region_buffer[last_char.region_key]
+                    if state.previous_line[x - 1].region_key == last_char.region_key:
+                        rs.sides += 1
                 rs.area += 1
                 rs.perimeter += 1
                 region_key = last_char.region_key
@@ -127,7 +139,11 @@ def line_reducer(state: RegionScanState, line: Iterable[str]):
 
     [last, *_] = reversed(prev_line)
     state.region_buffer[last.region_key].perimeter += 1
-    state.region_buffer[last.region_key].sides += 1
+    if (
+        state.y == 0
+        or state.previous_line[len(prev_line) - 1].region_key != last.region_key
+    ):
+        state.region_buffer[last.region_key].sides += 1
     return RegionScanState(prev_line, state.region_buffer, state.y + 1)
 
 
@@ -137,16 +153,19 @@ with open("input.txt") as file:
         line_reducer, [line for line in line_gen(file)], RegionScanState([], {}, 0)
     )
     last_line_regions = [
-        reduced_state.region_buffer[a[0]] for a in reduced_state.previous_line
+        (a[0], reduced_state.region_buffer[a[0]]) for a in reduced_state.previous_line
     ]
 
-    region_sides = []
-    for region in last_line_regions:
-        region.perimeter += 1
-        if region not in region_sides:
-            region.sides += 1
-            region_sides.append(region)
+    for i, ((fk, fr), (sk, sr)) in enumerate(pairwise(last_line_regions)):
+        if i == 0:
+            fr.perimeter += 1
+            fr.sides += 1
 
-    print(reduced_state)
+        sr.perimeter += 1
+        if sk != fk:
+            sr.sides += 1
+
     result_a = sum([a.perimeter * a.area for a in reduced_state.region_buffer.values()])
     result_b = sum([a.sides * a.area for a in reduced_state.region_buffer.values()])
+    print(result_b)
+    print(result_a)
