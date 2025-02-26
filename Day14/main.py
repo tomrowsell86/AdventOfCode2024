@@ -1,5 +1,3 @@
-import dataclasses
-from os import posix_fallocate
 import re
 from dataclasses import dataclass
 from typing import NamedTuple
@@ -9,6 +7,8 @@ Vector = NamedTuple("Vector", [("x", int), ("y", int)])
 
 @dataclass
 class GuardProperty:
+    bounds = Vector(11, 7)
+
     def __init__(
         self,
         origin: Vector,
@@ -18,14 +18,24 @@ class GuardProperty:
         self.velocity = velocity
 
     def __repr__(self) -> str:
-        return f"p:{self.position},v:{self.velocity}"
+        return f"p:{self.position}\n"
+
+    def wrap_around(self, product, bounds):
+        if product < 0:
+            return bounds - abs(product)
+        elif product >= bounds:
+            return product - bounds
+        return product
 
     def product(self, v1: Vector, v2: Vector):
-        return Vector(v1.x + v2.x, v1.y + v2.y)
+        nx = self.wrap_around(v1.x + v2.x, self.bounds.x)
+        ny = self.wrap_around(v1.y + v2.y, self.bounds.y)
+        return Vector(nx, ny)
 
     def move(self, times: int):
-        for _ in range(1, times):
+        for _ in range(0, times):
             self.position = self.product(self.position, self.velocity)
+            print(self.position)
 
 
 def parse_guard(line: str):
