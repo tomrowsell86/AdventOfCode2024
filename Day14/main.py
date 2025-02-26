@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from typing import NamedTuple
+from math import floor
 
 Vector = NamedTuple("Vector", [("x", int), ("y", int)])
 
@@ -53,4 +54,13 @@ with open("input.txt") as file:
     guards = [parse_guard(line.removesuffix("\n")) for line in file.readlines()]
     for guard in guards:
         guard.move(100)
+    vx = floor(11 / 2)
+    vy = floor(7 / 2)
+    q1 = [g for g in guards if g.position.x < vx and g.position.y < vy]
+    q2 = [g for g in guards if g.position.x > vx and g.position.y < vy]
+    q3 = [g for g in guards if g.position.x < vx and g.position.y > vy]
+    q4 = [g for g in guards if g.position.x < vx and g.position.y > vy]
+
+    print(min([len(q) for q in [q1, q2, q3, q4]]))
+
     print(guards)
