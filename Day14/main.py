@@ -2,13 +2,14 @@ import re
 from dataclasses import dataclass
 from typing import NamedTuple
 from math import floor
+from functools import reduce
 
 Vector = NamedTuple("Vector", [("x", int), ("y", int)])
 
 
 @dataclass
 class GuardProperty:
-    bounds = Vector(11, 7)
+    bounds = Vector(101, 103)
 
     def __init__(
         self,
@@ -54,13 +55,32 @@ with open("input.txt") as file:
     guards = [parse_guard(line.removesuffix("\n")) for line in file.readlines()]
     for guard in guards:
         guard.move(100)
-    vx = floor(11 / 2)
-    vy = floor(7 / 2)
-    q1 = [g for g in guards if g.position.x < vx and g.position.y < vy]
-    q2 = [g for g in guards if g.position.x > vx and g.position.y < vy]
-    q3 = [g for g in guards if g.position.x < vx and g.position.y > vy]
-    q4 = [g for g in guards if g.position.x < vx and g.position.y > vy]
+    middle_y = floor(103 / 2)
+    middle_x = floor(101 / 2)
 
-    print(min([len(q) for q in [q1, q2, q3, q4]]))
+    def quadrant_reducer(
+        state: dict[str, int], current: GuardProperty
+    ) -> dict[str, int]:
+        def update_state(key, state):
+            current_count = state.setdefault(key, 0)
+            state[key] = current_count + 1
 
-    print(guards)
+        match (current.position.x < middle_x, current.position.y < middle_y):
+            case (True, True):
+                update_state("UL", state)
+            case (True, False):
+                update_state("LL", state)
+            case (False, True):
+                update_state("LR", state)
+            case (False, False):
+                update_state("UR", state)
+        return state
+
+    middle_excluded_guards = [
+        g for g in guards if g.position.x != middle_x and g.position.y != middle_y
+    ]
+    quad_counts = reduce(quadrant_reducer, middle_excluded_guards, {})
+
+    result = reduce(lambda prev, curr: prev * curr, quad_counts.values())
+
+    print(result)
